@@ -1,14 +1,20 @@
 package com.example.sonar10;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.slider.RangeSlider;
 import com.jjoe64.graphview.GraphView;
@@ -60,6 +66,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    1);
+
+        }
 
         Resources res = getResources();
         thumb1 = res.getIntArray(R.array.slider_values)[0];
@@ -168,5 +183,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return maxIdx;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == 1 && (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED)) {
+            Toast.makeText(MainActivity.this, "Permission denied!", Toast.LENGTH_LONG).show();
+            this.finishAffinity();
+        }
     }
 }
