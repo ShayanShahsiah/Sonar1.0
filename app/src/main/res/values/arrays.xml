@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <integer-array name="slider_values">
-        <item>20</item>
-        <item>140</item>
+        <item>30</item>
+        <item>130</item>
     </integer-array>
 </resources>

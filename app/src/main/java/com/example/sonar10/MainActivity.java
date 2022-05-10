@@ -84,8 +84,6 @@ public class MainActivity extends AppCompatActivity {
         slider.addOnChangeListener((slider1, value, fromUser) -> {
             thumb1 = slider.getValues().get(0);
             thumb2 = slider.getValues().get(1);
-
-            drawBounds();
         });
 
         button1.setOnClickListener(v -> {
@@ -117,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                     for (int i = 0; i < data.length; i++) {
                         if (data[i] > 30000*12) {
                             //System.out.println(i + "\t" + (data.size() - i));
-                            Log.e(TAG, "PEAK: " + i);
+                            Log.i(TAG, "PEAK: " + i);
                             for (int j = 0; j < maxX && i + j < data.length; j++) {
                                 double w = 12.2;
                                 double l = (j - 500/3.0)/8.0/ToneGenerator.SAMPLE_RATE/2.0*34300 + 2.0;
@@ -139,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     int peak1Idx = maxIdx(valueList);
-                    double peak1Distance = distanceList.get(peak1Idx);
+                    double peak1Distance = distanceList.size() > 0 ? distanceList.get(peak1Idx) : Double.NaN;
 
                     runOnUiThread(() -> {
                         distanceView.setText(String.format(Locale.ENGLISH, "%.1f", peak1Distance));
