@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 public class ToneRecorder {
     private static final String TAG = "ToneRecorder";
-    private final int duration = 32768;
+    private final int duration = 16384;
     static final int DELAY = 10000;
     private static final int SAMPLE_RATE = ToneGenerator.SAMPLE_RATE;
     private final short[] buffer = new short[DELAY+duration];

@@ -34,8 +34,6 @@ public class MainActivity extends AppCompatActivity {
     static final int maxY = Short.MAX_VALUE*2/10000;
     private static final Pulse pulse = new LinearChirp();
 
-    private LineGraphSeries<DataPoint> thumbSeries1 = new LineGraphSeries<>();
-    private LineGraphSeries<DataPoint> thumbSeries2 = new LineGraphSeries<>();
     LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
 
     private float thumb1;
@@ -44,15 +42,13 @@ public class MainActivity extends AppCompatActivity {
     private void drawBounds() {
         graph.removeAllSeries();
 
-        //graph.removeSeries(thumbSeries1);
-        thumbSeries1 = new LineGraphSeries<>();
+        LineGraphSeries<DataPoint> thumbSeries1 = new LineGraphSeries<>();
         thumbSeries1.appendData(new DataPoint(thumb1, 0), true, maxX);
         thumbSeries1.appendData(new DataPoint(thumb1, maxY), true, maxX);
         thumbSeries1.setColor(Color.RED);
         graph.addSeries(thumbSeries1);
 
-        //graph.removeSeries(thumbSeries2);
-        thumbSeries2 = new LineGraphSeries<>();
+        LineGraphSeries<DataPoint> thumbSeries2 = new LineGraphSeries<>();
         thumbSeries2.appendData(new DataPoint(thumb2, 0), true, maxX);
         thumbSeries2.appendData(new DataPoint(thumb2, maxY), true, maxX);
         thumbSeries2.setColor(Color.RED);
@@ -105,11 +101,10 @@ public class MainActivity extends AppCompatActivity {
             shouldRepeat = !shouldRepeat;
             final Thread thread = new Thread(() -> {
                 while (shouldRepeat) {
-                    //graph.removeAllSeries();
 
                     final Thread thread1 = new Thread(() -> {
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(300);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -121,59 +116,57 @@ public class MainActivity extends AppCompatActivity {
                     recorder.record();
 
                     double[] data = CrossCorrelation.correlate(recorder.getAudio(), pulse);
-                    //graph.removeSeries(series);
+
                     series = new LineGraphSeries<>();
 
                     List<Double> distanceList = new ArrayList<>();
                     List<Double> valueList = new ArrayList<>();
 
+                    int startIdx = 0;
                     for (int i = 0; i < data.length; i++) {
-                        if (data[i] > 30000*12) {
-                            //System.out.println(i + "\t" + (data.size() - i));
-                            Log.i(TAG, "PEAK: " + i);
-                            for (int j = 0; j < maxX && i + j < data.length; j++) {
-                                double w = 12.2;
-                                double l = (j - 500/3.0)/8.0/ToneGenerator.SAMPLE_RATE/2.0*34300 + 2.0;
-                                double d = Math.sqrt(l*l - w*w/4);
-                                double value = data[i + j - 100]/120000;
-
-                                if (d > res.getInteger(R.integer.graph_end))
-                                    break;
-
-                                if (j%4 == 0)
-                                    series.appendData(new DataPoint(d, value), true, maxX);
-
-                                if (d > thumb1 && d < thumb2) {
-                                    distanceList.add(d);
-                                    valueList.add(value);
-                                }
-                            }
+                        if (data[i] > 3 * 120000 * 2.5) {
+                            startIdx = i;
+                            Log.i(TAG, "startIdx: " + i);
                             break;
                         }
                     }
+                    for (int j = 0; j < maxX && startIdx + j < data.length; j++) {
+                        double w = 12.2;
+                        double l = j/8./ToneGenerator.SAMPLE_RATE/2.*34300. + 0.2;
+                        double d = Math.sqrt(l*l - w*w/4);
+                        double value = startIdx+j < 100 ? 0 : data[startIdx+j-100]/120000;
+
+                        if (d > res.getInteger(R.integer.graph_end))
+                            break;
+
+                        if (j%4 == 0)
+                            series.appendData(new DataPoint(d, value), true, maxX);
+
+                        if (d > thumb1 && d < thumb2) {
+                            distanceList.add(d);
+                            valueList.add(value);
+                        }
+                    }
                     int peak1Idx = maxIdx(valueList);
-                    double peak1Distance = distanceList.size() > 0 ? distanceList.get(peak1Idx) : Double.NaN;
+
+                    double peak1Distance;
+                    if (distanceList.size() > 0 && valueList.get(peak1Idx) > 0.5)
+                        peak1Distance = distanceList.get(peak1Idx);
+                    else
+                        peak1Distance = Double.NaN;
 
                     runOnUiThread(() -> {
                         distanceView.setText(String.format(Locale.ENGLISH, "%.1f", peak1Distance));
                     });
 
-
-                    //graph.addSeries(series);
                     drawBounds();
-
-                    try {
-                        Thread.sleep(900);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 }
             });
             thread.start();
         });
     }
 
-    private int maxIdx(List<Double> list) {
+    private static int maxIdx(List<Double> list) {
         int maxIdx = 0;
         double max = 0;
         for (int i = 0; i < list.size(); i++) {
