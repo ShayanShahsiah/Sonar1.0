@@ -34,11 +34,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6664f61d-f552-4b04-b3b5-49d8055840a0" name="Default Changelist" comment="Add request mic permission dialog">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/MainActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/Pulse.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/Pulse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,6 +69,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/e50aee4edb880c6fec415310b6b87303/material-1.9.0/res/values/values.xml" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
