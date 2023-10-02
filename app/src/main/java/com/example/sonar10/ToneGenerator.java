@@ -12,11 +12,11 @@ public class ToneGenerator {
 
     static void playSound(Pulse pulse){
         final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT, 2*2*pulse.size(),
+                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, 2*pulse.size(),
                 AudioTrack.MODE_STATIC);
         audioTrack.setVolume(AudioTrack.getMaxVolume());
-        audioTrack.write(pulse.getShorts(), 0, 2*pulse.size());
+        audioTrack.write(pulse.getShorts(), 0, pulse.size());
         audioTrack.play();
         try {
             Thread.sleep((int)(1000*pulse.duration()));

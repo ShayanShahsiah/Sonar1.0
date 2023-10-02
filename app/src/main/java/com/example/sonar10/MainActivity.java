@@ -21,11 +21,9 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.apache.commons.math3.stat.StatUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -44,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
 
     LineGraphSeries<DataPoint> seriesP = new LineGraphSeries<>();
 
-    private Resources res;
     private float thumb1;
     private float thumb2;
 
@@ -74,14 +71,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int[] findPeak(double[] data) {
-//        for (int i = 0; i < data.length; i++) {
-//            if (data[i] > 2.5*120000) { //3 * 120000 * 2.5
-//                Log.i(TAG, "startIdx: " + i);
-//                return i;
-//            }
-//        }
-//        return 0;
-
         int maxIdx = 0;
         for (int i = 0; i < data.length; i++)
             maxIdx = data[i] > data[maxIdx] ? i : maxIdx;
@@ -102,16 +91,6 @@ public class MainActivity extends AppCompatActivity {
             if (++nLocal == delta)
                 break;
         }
-//        for (int i = maxIdx-1; i > 0; i--) {
-//            if (!(data[i] > data[i-1] && data[i] > data[i+1]))
-//                continue;
-//
-//            maxInds[nLocal] = i;
-//            maxVals[nLocal] = data[i];
-//
-//            if (++nLocal == 3*delta)
-//                break;
-//        }
 
         return new int[] {(int) Math.round(StatUtils.mean(maxInds)), (int) Math.round(StatUtils.mean(maxVals))};
     }
@@ -121,29 +100,19 @@ public class MainActivity extends AppCompatActivity {
     private void populateSeries(double[] data,
                                 LineGraphSeries<DataPoint> series,
                                 List<Double> distanceList,
-                                List<Double> valueList,
-                                boolean aux) {
-        if (!aux) {
-            int[] peak = findPeak(data);
-            startIdx = peak[0];
-            startY = peak[1];
-        }
+                                List<Double> valueList) {
+        int[] peak = findPeak(data);
+        startIdx = peak[0];
+        startY = peak[1];
 
         for (int j = 0; j < maxX && startIdx + j < data.length; j++) {
-            double w = 12.2;
             double l = (double) j/ToneGenerator.SAMPLE_RATE/2.*34300./factor;
-//            double d = Math.sqrt(l*l - w*w/4);
+            //double w = 12.2;
+            //double d = Math.sqrt(l*l - w*w/4);
             int offset = 10 * factor;
             double value = startIdx+j < offset ? 0 : data[startIdx+j-offset]*10/(0.25*startY);
-            if (aux)
-                value *= 2;
 
-//            if (d > res.getInteger(R.integer.graph_end))
-//                break;
-
-            if (j%factor == 0)
-//            if (data[startIdx+j-offset] > data[startIdx+j-offset+1] && data[startIdx+j-offset] > data[startIdx+j-offset-1])
-                series.appendData(new DataPoint(l, value), true, maxX);
+            series.appendData(new DataPoint(l, value), true, maxX);
 
             if (l > thumb1 && l < thumb2) {
                 distanceList.add(l);
@@ -164,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        res = getResources();
+        Resources res = getResources();
         thumb1 = res.getIntArray(R.array.slider_values)[0];
         thumb2 = res.getIntArray(R.array.slider_values)[1];
 
@@ -174,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
         graph.getViewport().setXAxisBoundsManual(true);
         graph.getViewport().setMaxY(maxY);
         graph.getViewport().setMinY(0);
-        graph.getViewport().setMaxX((double) maxX/ToneGenerator.SAMPLE_RATE/2.*34300./factor); //res.getInteger(R.integer.graph_end)
+        graph.getViewport().setMaxX((double) maxX/ToneGenerator.SAMPLE_RATE/2.*34300./factor);
         graph.getViewport().setMinX(res.getInteger(R.integer.graph_start));
 
 
@@ -202,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-                        Log.e("DUUUH", ""+recorder.isPastDelay());
+                        //Log.i("MinActivity", ""+recorder.isPastDelay());
                         ToneGenerator.playSound(pulse);
                     });
                     thread1.start();
@@ -211,11 +180,11 @@ public class MainActivity extends AppCompatActivity {
                     if (thread1.isAlive())
                         Log.e("RECORDING", "Recording has finished too early!");
 
-                    double[] dataR = CrossCorrelation.correlate(recorder.getAudioR(), pulse);
+                    double[] data = CrossCorrelation.correlate(recorder.getAudio(), pulse);
                     series = new LineGraphSeries<>();
                     List<Double> distanceList = new ArrayList<>();
                     List<Double> valueList = new ArrayList<>();
-                    populateSeries(dataR, series, distanceList, valueList, false);
+                    populateSeries(data, series, distanceList, valueList);
 
                     int peakIdx = maxIdx(valueList);
                     double peakDist;

@@ -35,7 +35,10 @@
   <component name="ChangeListManager">
     <list default="true" id="6664f61d-f552-4b04-b3b5-49d8055840a0" name="Default Changelist" comment="Add request mic permission dialog">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/demo.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/MainActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/Pulse.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/Pulse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sonar10/ToneRecorder.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

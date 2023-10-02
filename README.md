@@ -1,7 +1,9 @@
 # Sonar1.0
 Android app that can measure distances by echolocation.
-Currently only tested on Samsung Galaxy A8 2018 and Samsung Galaxy S8.
-Performance on other devices may be buggy.
+Tested on the following devices:
+- Samsung Galaxy A8 (2018)
+- Samsung Galaxy S8
+- Xiaomi Redmi Note 11
 <br/>
 <br/>
 ![plot](./demo.jpg)

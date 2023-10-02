@@ -6,8 +6,6 @@ import android.media.AudioTimestamp;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import org.apache.commons.math3.transform.TransformUtils;
-
 import java.util.Arrays;
 
 public class ToneRecorder {
@@ -19,15 +17,14 @@ public class ToneRecorder {
 //    private final short[] audioL = new short[duration];
     private final short[] audioR = new short[duration];
     private final AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                            SAMPLE_RATE, AudioFormat.CHANNEL_IN_DEFAULT,
+                                            SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
                                             AudioFormat.ENCODING_PCM_16BIT,
                                             2*buffer.length);
     static {
         Log.i(TAG, "minBufferSize: "+AudioRecord.getMinBufferSize(SAMPLE_RATE,
-                                                                            AudioFormat.CHANNEL_IN_DEFAULT,
+                                                                            AudioFormat.CHANNEL_IN_MONO,
                                                                             AudioFormat.ENCODING_PCM_16BIT));
     }
-    private boolean didLoad = false;
 
     void record() {
         recorder.startRecording();
@@ -36,26 +33,8 @@ public class ToneRecorder {
         recorder.release();
     }
 
-    private void loadData() {
-        //audio = Arrays.copyOfRange(buffer, DELAY, DELAY+duration);
-        for (int i = 0; i < duration; i++) {
-//            audioL[i] = buffer[2*DELAY + 2*i];
-//            audioR[i] = buffer[2*DELAY + 2*i+1];
-            audioR[i] = buffer[i];
-        }
-        didLoad = true;
-    }
-
-//    short[] getAudioL() {
-//        if (!didLoad)
-//            loadData();
-//        return audioL;
-//    }
-
-    short[] getAudioR() {
-        if (!didLoad)
-            loadData();
-        return audioR;
+    short[] getAudio() {
+        return Arrays.copyOfRange(buffer, DELAY, DELAY+duration);
     }
 
     boolean isPastDelay() {
