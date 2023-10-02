@@ -38,18 +38,18 @@ public class CrossCorrelation {
 //        return Arrays.copyOf(input, newLength);
 //    }
 
-    static Complex[] interpolate(Complex[] fft, int factor) {
+    private static Complex[] upsample(Complex[] fft, int factor) {
         int n = fft.length;
         int p = factor * n;
         for (int i = 0; i < fft.length; i++) {
-            fft[i] = fft[i].multiply(Math.sqrt((double) p / n));
+            fft[i] = fft[i].multiply(factor);
         }
         Complex[] newFft = new Complex[p];
         int fftIdx = 0;
-        for (int i = 0; i < n / 2 + 1; i++) {
+        for (int i = 0; i < n / 2; i++) {
             newFft[i] = fft[fftIdx++];
         }
-        for (int i = n / 2 + 1; i < p - n / 2; i++) {
+        for (int i = n / 2; i < p - n / 2; i++) {
             newFft[i] = new Complex(0);
         }
         fftIdx--;
@@ -60,20 +60,21 @@ public class CrossCorrelation {
     }
 
     static double[] correlate(short[] recording, Pulse pulse) {
-        int factor = 8;
+//        int factor = MainActivity.factor;
 
         FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
         Complex[] recordingFft = transformer.transform(toDoubles(recording), TransformType.FORWARD);
-        recordingFft = interpolate(recordingFft, factor);
+//        recordingFft = upsample(recordingFft, factor);
 
         int length = recordingFft.length;
 
-        double[] transmittedPulse = Arrays.copyOf(pulse.getDoubles(ToneGenerator.SAMPLE_RATE * factor), length);
-        Complex[] transmittedPulseFft = transformer.transform(transmittedPulse, TransformType.FORWARD);
+//        double[] matchedFilter = Arrays.copyOf(pulse.getDoubles(ToneGenerator.SAMPLE_RATE * factor), length);
+        double[] matchedFilter = Arrays.copyOf(pulse.getDoubles(), length);
+        Complex[] matchedFilterFft = transformer.transform(matchedFilter, TransformType.FORWARD);
 
         Complex[] correlationFft = new Complex[length];
         for (int i = 0; i < length; i++) {
-            correlationFft[i] = transmittedPulseFft[i].conjugate().multiply(recordingFft[i]);
+            correlationFft[i] = matchedFilterFft[i].conjugate().multiply(recordingFft[i]);
         }
         Complex[] correlation = transformer.transform(correlationFft, TransformType.INVERSE);
 

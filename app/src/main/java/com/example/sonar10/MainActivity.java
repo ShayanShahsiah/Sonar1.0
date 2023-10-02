@@ -21,7 +21,11 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Line;
+import org.apache.commons.math3.stat.StatUtils;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -30,12 +34,17 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     GraphView graph;
     boolean shouldRepeat = false;
-    static final int maxX = 400*3*6;
-    static final int maxY = Short.MAX_VALUE*2/10000;
-    private static final Pulse pulse = new LinearChirp();
+    static final int factor = 1;
+    static final int maxX = (int)Math.round(180*factor*ToneGenerator.SAMPLE_RATE*2./34300.);//400*3*6;
+    static final int maxY = 10;
+    private static final Pulse pulse = new LinearChirp();//new PhaseMod();//new LinearChirp();
 
     LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
+    LineGraphSeries<DataPoint> seriesL = new LineGraphSeries<>();
 
+    LineGraphSeries<DataPoint> seriesP = new LineGraphSeries<>();
+
+    private Resources res;
     private float thumb1;
     private float thumb2;
 
@@ -56,6 +65,91 @@ public class MainActivity extends AppCompatActivity {
 
         series.setColor(Color.rgb(3, 160, 62));
         graph.addSeries(series);
+
+        seriesL.setColor(Color.rgb(3, 62, 160));
+        graph.addSeries(seriesL);
+
+        seriesP.setColor(Color.RED);
+        graph.addSeries(seriesP);
+    }
+
+    private int[] findPeak(double[] data) {
+//        for (int i = 0; i < data.length; i++) {
+//            if (data[i] > 2.5*120000) { //3 * 120000 * 2.5
+//                Log.i(TAG, "startIdx: " + i);
+//                return i;
+//            }
+//        }
+//        return 0;
+
+        int maxIdx = 0;
+        for (int i = 0; i < data.length; i++)
+            maxIdx = data[i] > data[maxIdx] ? i : maxIdx;
+
+        int delta = 5;
+
+        double[] maxVals = new double[delta];
+        double[] maxInds = new double[delta];
+
+        int nLocal = 0;
+        for (int i = maxIdx; i < data.length-1; i++) {
+            if (!(data[i] > data[i-1] && data[i] > data[i+1]))
+                continue;
+
+            maxInds[nLocal] = i;
+            maxVals[nLocal] = data[i];
+
+            if (++nLocal == delta)
+                break;
+        }
+//        for (int i = maxIdx-1; i > 0; i--) {
+//            if (!(data[i] > data[i-1] && data[i] > data[i+1]))
+//                continue;
+//
+//            maxInds[nLocal] = i;
+//            maxVals[nLocal] = data[i];
+//
+//            if (++nLocal == 3*delta)
+//                break;
+//        }
+
+        return new int[] {(int) Math.round(StatUtils.mean(maxInds)), (int) Math.round(StatUtils.mean(maxVals))};
+    }
+
+    int startIdx = 0;
+    int startY = 0;
+    private void populateSeries(double[] data,
+                                LineGraphSeries<DataPoint> series,
+                                List<Double> distanceList,
+                                List<Double> valueList,
+                                boolean aux) {
+        if (!aux) {
+            int[] peak = findPeak(data);
+            startIdx = peak[0];
+            startY = peak[1];
+        }
+
+        for (int j = 0; j < maxX && startIdx + j < data.length; j++) {
+            double w = 12.2;
+            double l = (double) j/ToneGenerator.SAMPLE_RATE/2.*34300./factor;
+//            double d = Math.sqrt(l*l - w*w/4);
+            int offset = 10 * factor;
+            double value = startIdx+j < offset ? 0 : data[startIdx+j-offset]*10/(0.25*startY);
+            if (aux)
+                value *= 2;
+
+//            if (d > res.getInteger(R.integer.graph_end))
+//                break;
+
+            if (j%factor == 0)
+//            if (data[startIdx+j-offset] > data[startIdx+j-offset+1] && data[startIdx+j-offset] > data[startIdx+j-offset-1])
+                series.appendData(new DataPoint(l, value), true, maxX);
+
+            if (l > thumb1 && l < thumb2) {
+                distanceList.add(l);
+                valueList.add(value);
+            }
+        }
     }
 
     @Override
@@ -66,13 +160,11 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
 
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    1);
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.RECORD_AUDIO},1);
 
         }
 
-        Resources res = getResources();
+        res = getResources();
         thumb1 = res.getIntArray(R.array.slider_values)[0];
         thumb2 = res.getIntArray(R.array.slider_values)[1];
 
@@ -82,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
         graph.getViewport().setXAxisBoundsManual(true);
         graph.getViewport().setMaxY(maxY);
         graph.getViewport().setMinY(0);
-        graph.getViewport().setMaxX(res.getInteger(R.integer.graph_end));
+        graph.getViewport().setMaxX((double) maxX/ToneGenerator.SAMPLE_RATE/2.*34300./factor); //res.getInteger(R.integer.graph_end)
         graph.getViewport().setMinX(res.getInteger(R.integer.graph_start));
 
 
@@ -101,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
             shouldRepeat = !shouldRepeat;
             final Thread thread = new Thread(() -> {
                 while (shouldRepeat) {
+                    ToneRecorder recorder = new ToneRecorder();
 
                     final Thread thread1 = new Thread(() -> {
                         try {
@@ -108,56 +201,31 @@ public class MainActivity extends AppCompatActivity {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+
+                        Log.e("DUUUH", ""+recorder.isPastDelay());
                         ToneGenerator.playSound(pulse);
                     });
                     thread1.start();
 
-                    ToneRecorder recorder = new ToneRecorder();
                     recorder.record();
+                    if (thread1.isAlive())
+                        Log.e("RECORDING", "Recording has finished too early!");
 
-                    double[] data = CrossCorrelation.correlate(recorder.getAudio(), pulse);
-
+                    double[] dataR = CrossCorrelation.correlate(recorder.getAudioR(), pulse);
                     series = new LineGraphSeries<>();
-
                     List<Double> distanceList = new ArrayList<>();
                     List<Double> valueList = new ArrayList<>();
+                    populateSeries(dataR, series, distanceList, valueList, false);
 
-                    int startIdx = 0;
-                    for (int i = 0; i < data.length; i++) {
-                        if (data[i] > 3 * 120000 * 2.5) {
-                            startIdx = i;
-                            Log.i(TAG, "startIdx: " + i);
-                            break;
-                        }
-                    }
-                    for (int j = 0; j < maxX && startIdx + j < data.length; j++) {
-                        double w = 12.2;
-                        double l = j/8./ToneGenerator.SAMPLE_RATE/2.*34300. + 0.2;
-                        double d = Math.sqrt(l*l - w*w/4);
-                        double value = startIdx+j < 100 ? 0 : data[startIdx+j-100]/120000;
-
-                        if (d > res.getInteger(R.integer.graph_end))
-                            break;
-
-                        if (j%4 == 0)
-                            series.appendData(new DataPoint(d, value), true, maxX);
-
-                        if (d > thumb1 && d < thumb2) {
-                            distanceList.add(d);
-                            valueList.add(value);
-                        }
-                    }
-                    int peak1Idx = maxIdx(valueList);
-
-                    double peak1Distance;
-                    if (distanceList.size() > 0 && valueList.get(peak1Idx) > 0.5)
-                        peak1Distance = distanceList.get(peak1Idx);
+                    int peakIdx = maxIdx(valueList);
+                    double peakDist;
+                    if (distanceList.size() > 0 && valueList.get(peakIdx) > 0.5)
+                        peakDist = distanceList.get(peakIdx);
                     else
-                        peak1Distance = Double.NaN;
+                        peakDist = Double.NaN;
 
-                    runOnUiThread(() -> {
-                        distanceView.setText(String.format(Locale.ENGLISH, "%.1f", peak1Distance));
-                    });
+                    runOnUiThread(() -> distanceView.setText(String.format(Locale.ENGLISH,
+                            "%.1f cm", peakDist)));
 
                     drawBounds();
                 }
