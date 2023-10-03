@@ -10,20 +10,22 @@ import java.util.Arrays;
 
 public class ToneRecorder {
     private static final String TAG = "ToneRecorder";
-    private final int duration = 32768;//32768;//8192;//65536;//16384;
+    private final int duration = 32768;//65536;//16384;
     static final int DELAY = 8000;
     private static final int SAMPLE_RATE = Pulse.SAMPLE_RATE;
     private final short[] buffer = new short[DELAY+duration];
-//    private final short[] audioL = new short[duration];
-    private final short[] audioR = new short[duration];
-    private final AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                            SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-                                            AudioFormat.ENCODING_PCM_16BIT,
-                                            2*buffer.length);
+    private final AudioRecord recorder = new AudioRecord(
+            MediaRecorder.AudioSource.MIC,
+            Pulse.SAMPLE_RATE,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            2*buffer.length);
+
     static {
-        Log.i(TAG, "minBufferSize: "+AudioRecord.getMinBufferSize(SAMPLE_RATE,
-                                                                            AudioFormat.CHANNEL_IN_MONO,
-                                                                            AudioFormat.ENCODING_PCM_16BIT));
+        Log.i(TAG, "minBufferSize: " + AudioRecord.getMinBufferSize(
+                Pulse.SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT));
     }
 
     void record() {

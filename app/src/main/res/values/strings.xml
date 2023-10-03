@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Sonar1.0</string>
+    <string name="toggle_button_text_start">START</string>
+    <string name="toggle_button_text_stop">STOP</string>
 </resources>

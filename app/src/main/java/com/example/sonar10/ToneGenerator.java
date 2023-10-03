@@ -8,11 +8,10 @@ import android.util.Log;
 
 public class ToneGenerator {
     private static final String TAG = "ToneGenerator";
-    static final int SAMPLE_RATE = Pulse.SAMPLE_RATE;
 
     static void playSound(Pulse pulse){
         final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
+                Pulse.SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
                 AudioFormat.ENCODING_PCM_16BIT, 2*pulse.size(),
                 AudioTrack.MODE_STATIC);
         audioTrack.setVolume(AudioTrack.getMaxVolume());
