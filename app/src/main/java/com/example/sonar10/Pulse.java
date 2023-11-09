@@ -13,11 +13,16 @@ abstract class Pulse {
     }
     abstract double[] getDoubles();
 
-    public short[] getShorts() {
+    public short[] getShorts(boolean stereo) {
         double[] doubles = this.getDoubles();
-        short[] res = new short[size()];
+        short[] res = new short[stereo ? 2*size() : size()];
         for (int i = 0; i < size(); i++) {
-            res[i] = (short) Math.round(Short.MAX_VALUE * doubles[i]);
+            if (stereo) {
+                res[2*i] = 0;
+                res[2*i+1] = (short) Math.round(Short.MAX_VALUE * doubles[i]);
+            }
+            else
+                res[i] = (short) Math.round(Short.MAX_VALUE * doubles[i]);
         }
         return res;
     }
@@ -30,16 +35,11 @@ class LinearChirp extends Pulse {
         LENGTH = 4000;
     }
 
-    @Override
     public double[] getDoubles() {
-        return getDoubles(1);
-    }
-
-    public double[] getDoubles(int factor) {
         final double sweepRate = (double) (FINAL_FREQ - INITIAL_FREQ) / duration();
-        double[] res = new double[factor * size()];
+        double[] res = new double[size()];
         for (int i = 0; i < res.length; i++) {
-            double t = (double) i / (factor * SAMPLE_RATE);
+            double t = (double) i / (SAMPLE_RATE);
             double phase = 2.*Math.PI * (.5*sweepRate*t*t + INITIAL_FREQ*t);
             double amp = Math.pow(Math.sin(Math.PI*i/(res.length-1)), 2); // Hann window
             res[i] = amp * Math.sin(phase);

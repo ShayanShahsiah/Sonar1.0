@@ -7,6 +7,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatToggleButton;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -14,18 +15,23 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.google.android.material.slider.RangeSlider;
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.BaseSeries;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.series.Series;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.stat.StatUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.Lock;
@@ -42,18 +48,23 @@ public class MainActivity extends AppCompatActivity {
     private final LineGraphSeries<DataPoint> mSeries = new LineGraphSeries<>();
     private final LineGraphSeries<DataPoint> mThumbSeries1 = new LineGraphSeries<>();
     private final LineGraphSeries<DataPoint> mThumbSeries2 = new LineGraphSeries<>();
+    private final LineGraphSeries<DataPoint> mAreaSeries = new LineGraphSeries<>();
     private final Lock mLock = new ReentrantLock();
     private final Handler mHandler = new Handler();
     private boolean mShouldRepeat = false;
     private RangeSlider mSlider;
     private TextView mDistanceView;
-    private Button mToggleButton;
     private DataPoint[] mDataPoints;
 
     {
         mSeries.setColor(Color.rgb(3, 160, 62));
         mThumbSeries1.setColor(Color.RED);
         mThumbSeries2.setColor(Color.RED);
+
+        int color = Color.argb(50, 255, 0, 0);
+        mAreaSeries.setColor(color);
+        mAreaSeries.setDrawBackground(true);
+        mAreaSeries.setBackgroundColor(color);
     }
 
     private ImmutablePair<Integer, Integer> findPeak(double[] data) {
@@ -124,18 +135,20 @@ public class MainActivity extends AppCompatActivity {
         graph.addSeries(mSeries);
         graph.addSeries(mThumbSeries1);
         graph.addSeries(mThumbSeries2);
+        graph.addSeries(mAreaSeries);
 
         mDistanceView = findViewById(R.id.distanceView);
         mSlider = findViewById(R.id.slider);
 
-        mToggleButton = findViewById(R.id.toggleButton);
-        mToggleButton.setOnClickListener(this::onClickToggle);
+        ToggleButton toggleButton = findViewById(R.id.toggleButton);
+        toggleButton.setOnCheckedChangeListener(this::onClickToggle);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode != 1)
             return;
         if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
@@ -156,14 +169,13 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    public void onClickToggle(View view) {
-        mShouldRepeat = !mShouldRepeat;
-        if (mShouldRepeat) {
-            mToggleButton.setText(R.string.toggle_button_text_stop);
+    private void onClickToggle(CompoundButton compoundButton, boolean isChecked) {
+        if (isChecked) {
+            mShouldRepeat = true;
             new Thread(this::measure).start();
         }
         else
-            mToggleButton.setText(R.string.toggle_button_text_start);
+            mShouldRepeat = false;
     }
 
     public void updateGraph() {
@@ -208,15 +220,55 @@ public class MainActivity extends AppCompatActivity {
             mLock.lock();
             mDataPoints = new DataPoint[MAX_X_SAMPLES];
             populateSeries(data, mDataPoints, distances, values);
-            mLock.unlock();
 
             int peakIdx = IntStream.range(0, values.size())
                     .reduce((i, j) -> values.get(i) > values.get(j) ? i : j)
                     .orElse(-1);
-            if (peakIdx == -1)
+            if (peakIdx == -1) {
+                mLock.unlock();
                 continue;
+            }
 
-            double peakDist = values.get(peakIdx) > 0.5 ? distances.get(peakIdx) : Double.NaN;
+            if (values.get(peakIdx) > 1) {
+                double thresh = .33;
+                int sIdx;
+                for (sIdx = peakIdx - 1; sIdx > 0; sIdx--) {
+                    if (values.get(sIdx) >= values.get(sIdx - 1) &&
+                            values.get(sIdx) >= values.get(sIdx + 1) &&
+                            values.get(sIdx) < thresh * values.get(peakIdx)) {
+                        break;
+                    }
+                }
+                sIdx = Math.max(sIdx, 0);
+                sIdx = Math.min(sIdx, values.size() - 1);
+
+                int eIdx;
+                for (eIdx = peakIdx + 1; eIdx < values.size() - 1; eIdx++) {
+                    if (values.get(eIdx) >= values.get(eIdx - 1) &&
+                            values.get(eIdx) >= values.get(eIdx + 1) &&
+                            values.get(eIdx) < thresh * values.get(peakIdx)) {
+                        break;
+                    }
+                }
+                eIdx = Math.max(eIdx, 0);
+                eIdx = Math.min(eIdx, values.size() - 1);
+
+//                DataPoint[] dataPoints = {
+//                        new DataPoint(distances.get(sIdx), values.get(peakIdx)),
+//                        new DataPoint(distances.get(eIdx), values.get(peakIdx))};
+                DataPoint[] dataPoints = new DataPoint[eIdx - sIdx];
+                for (int i = 0; i < dataPoints.length; i++) {
+                    dataPoints[i] = new DataPoint(distances.get(sIdx + i), values.get(sIdx + i));
+                }
+                mAreaSeries.resetData(dataPoints);
+            }
+            else {
+                mAreaSeries.resetData(new DataPoint[]{});
+            }
+
+            mLock.unlock();
+
+            double peakDist = values.get(peakIdx) > 1 ? distances.get(peakIdx) : Double.NaN;
             String text = String.format(Locale.ENGLISH, "%.1f cm", peakDist);
             runOnUiThread(() -> mDistanceView.setText(text));
         }
