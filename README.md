@@ -6,4 +6,4 @@ Tested on the following devices:
 - Xiaomi Redmi Note 11  
 <br/>
 
-![plot](./demo.jpg)
+![plot](./demo2.jpg)
